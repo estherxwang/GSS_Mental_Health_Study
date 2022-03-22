@@ -1,0 +1,1023 @@
+---
+title: "Assessing Mental Health With Regard to Various of Factors "
+subtitle: "Sex, age and income have contribution in impacting one's mental health"
+author: 
+  - Zhiyue Yu
+  - Xueru ma
+  - Dingding Wang
+thanks: "Code and data are available at: https://github.com/estherxwang/GSS_Mental_Health_Study."
+date: "`r format(Sys.time(), '%d %B %Y')`"
+abstract: "Mental health is now becoming one of the most significant health problems, including but not limit to depression, anxiety disorders and eating disorders etc,. We extractd 4 of catagorical variables from Canada 2017 General Social Survey (GSS): Families Cycle 31 as predictors to fit logistic regression model to study their impact on mental health. We find that these factors has no influence on ones mental health, it is possible to persue a better life without having increasing pressure. Our findings will be a guideline and a motivation for people who are struggling with their life."
+output:
+  pdf_document:
+    latex_engine: xelatex
+toc: TRUE
+bibliography: references.bib
+---
+```{r, include=FALSE}
+install.packages("corrplot")
+```
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+```
+
+```{r, include=FALSE}
+library(plyr)
+library(dplyr)
+library(car)
+library(patchwork)
+```
+
+```{r, include=FALSE}
+#read in data
+data <- read.csv("2017 data.csv")
+
+#select all the columns that we needed
+data1 <- data %>%
+  select(sex, agegr10, noc1610, srh_115, ttlincg2, uhw_16gr) %>%
+  filter(agegr10 != 96 ) %>%
+  filter(agegr10 != 97 ) %>%
+  filter(agegr10 != 98 ) %>%
+  filter(agegr10 != 99) %>%
+  filter(sex != 6 ) %>%
+  filter(sex != 7 ) %>%
+  filter(sex != 8 ) %>%
+  filter(sex != 9)  %>%
+  filter(noc1610 != 95 ) %>%
+  filter(noc1610 != 96 ) %>%
+  filter(noc1610 != 97 ) %>%
+  filter(noc1610 != 98 ) %>%
+  filter(noc1610 != 99 ) %>%
+  filter(srh_115 != 6 ) %>%
+  filter(srh_115 != 7 ) %>%
+  filter(srh_115 != 8 ) %>%
+  filter(srh_115 != 9) %>%
+  filter(ttlincg2 !=  96 ) %>%
+  filter(ttlincg2 !=  97 ) %>%
+  filter(ttlincg2 !=  98 ) %>%
+  filter(ttlincg2 !=  99 ) %>%
+  filter(uhw_16gr != 6 ) %>%
+  filter(uhw_16gr != 7 ) %>%
+  filter(uhw_16gr != 8 ) %>%
+  filter(uhw_16gr != 9 )
+
+colnames(data1) = c("sex",
+         "Age_group",
+         "Occupation",
+         "Self_rated_mental_health",
+         "Income_of_respondent",
+         "Average_number_of_hours_worked_per_week"
+      )
+
+#check if there are any missing values
+which(is.na(data1))
+
+
+```
+
+
+```{r mhmale, fig.cap="Self Rated Mental Health of Respondents Male", include = FALSE}
+#select the data
+data_mental1 = select(data1, 1, 4)
+data_mental1 <- data_mental1 %>% 
+  filter(sex == 1) %>%
+  select(2)
+
+#change the names
+data_mental1[data_mental1 == 1] <- "Excellent"
+data_mental1[data_mental1 == 2] <- "Very good"
+data_mental1[data_mental1 == 3] <- "Good"
+data_mental1[data_mental1 == 4] <- "Fair"
+data_mental1[data_mental1 == 5] <- "Poor"
+data_mental1[data_mental1 == 7] <- "Don't know"
+data_mental1[data_mental1 == 8] <- "Refusal"
+data_mental1[data_mental1 == 9] <- "Not stated"
+
+#draw the bar chart
+bar_mh1 <- data_mental1 %>%
+  ggplot(aes(x = Self_rated_mental_health, fill = Self_rated_mental_health)) +
+  geom_bar() + 
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust=1),
+        legend.position = "none") +
+  labs(x = "Self rated mental health male",
+       title = "Bar Chart of Mental Health Male")
+bar_mh1
+
+```
+
+```{r mhfemale, fig.cap="Self Rated Mental Health of Respondents", include = FALSE}
+#select the data
+data_mental2 = select(data1, 1, 4)
+data_mental2 <- data_mental2 %>% 
+  filter(sex == 2) %>%
+  select(2)
+
+#change the names
+data_mental2[data_mental2 == 1] <- "Excellent"
+data_mental2[data_mental2 == 2] <- "Very good"
+data_mental2[data_mental2 == 3] <- "Good"
+data_mental2[data_mental2 == 4] <- "Fair"
+data_mental2[data_mental2 == 5] <- "Poor"
+data_mental2[data_mental2 == 7] <- "Don't know"
+data_mental2[data_mental2 == 8] <- "Refusal"
+data_mental2[data_mental2 == 9] <- "Not stated"
+
+#draw the bar chart
+bar_mh2 <- data_mental2 %>%
+  ggplot(aes(x = Self_rated_mental_health, fill = Self_rated_mental_health)) +
+  geom_bar() + 
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust=1),
+        legend.position = "none") +
+  labs(x = "Self rated mental health female",
+       title = "Bar Chart of Mental Health Female")
+bar_mh2
+
+```
+
+
+
+```{r mhinc25, fig.cap="Self Rated Mental Health of Respondents Income below 25k", include = FALSE}
+#select the data
+data_mental3 = select(data1, 5, 4)
+data_mental3 <- data_mental3 %>% 
+  filter(Income_of_respondent == 1) %>%
+  select(2)
+
+#change the names
+data_mental3[data_mental3 == 1] <- "Excellent"
+data_mental3[data_mental3 == 2] <- "Very good"
+data_mental3[data_mental3 == 3] <- "Good"
+data_mental3[data_mental3 == 4] <- "Fair"
+data_mental3[data_mental3 == 5] <- "Poor"
+data_mental3[data_mental3 == 7] <- "Don't know"
+data_mental3[data_mental3 == 8] <- "Refusal"
+data_mental3[data_mental3 == 9] <- "Not stated"
+
+#draw the bar chart
+bar_mh3 <- data_mental3 %>%
+  ggplot(aes(x = Self_rated_mental_health, fill = Self_rated_mental_health)) +
+  geom_bar() + 
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust=1),
+        legend.position = "none") +
+  labs(x = "Self rated mental health income below 25k",
+       title = "Bar Chart of Mental Health Income below 25k")
+bar_mh3
+
+```
+
+```{r mhinc2550, fig.cap="Self Rated Mental Health of Respondents Income 25k - 50k", include = FALSE}
+#select the data
+data_mental4 = select(data1, 5, 4)
+data_mental4 <- data_mental4 %>% 
+  filter(Income_of_respondent == 2) %>%
+  select(2)
+
+#change the names
+data_mental4[data_mental4 == 1] <- "Excellent"
+data_mental4[data_mental4 == 2] <- "Very good"
+data_mental4[data_mental4 == 3] <- "Good"
+data_mental4[data_mental4 == 4] <- "Fair"
+data_mental4[data_mental4 == 5] <- "Poor"
+data_mental4[data_mental4 == 7] <- "Don't know"
+data_mental4[data_mental4 == 8] <- "Refusal"
+data_mental4[data_mental4 == 9] <- "Not stated"
+
+#draw the bar chart
+bar_mh4 <- data_mental4 %>%
+  ggplot(aes(x = Self_rated_mental_health, fill = Self_rated_mental_health)) +
+  geom_bar() + 
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust=1),
+        legend.position = "none") +
+  labs(x = "Self rated mental health income 25k - 50k",
+       title = "Bar Chart of Mental Health Income 25k - 50k")
+bar_mh4
+
+```
+
+```{r mhinc5075, fig.cap="Self Rated Mental Health of Respondents Income 50k - 75k", include = FALSE}
+#select the data
+data_mental5 = select(data1, 5, 4)
+data_mental5 <- data_mental5 %>% 
+  filter(Income_of_respondent == 3) %>%
+  select(2)
+
+#change the names
+data_mental5[data_mental5 == 1] <- "Excellent"
+data_mental5[data_mental5 == 2] <- "Very good"
+data_mental5[data_mental5 == 3] <- "Good"
+data_mental5[data_mental5 == 4] <- "Fair"
+data_mental5[data_mental5 == 5] <- "Poor"
+data_mental5[data_mental5 == 7] <- "Don't know"
+data_mental5[data_mental5 == 8] <- "Refusal"
+data_mental5[data_mental5 == 9] <- "Not stated"
+
+#draw the bar chart
+bar_mh5 <- data_mental5 %>%
+  ggplot(aes(x = Self_rated_mental_health, fill = Self_rated_mental_health)) +
+  geom_bar() + 
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust=1),
+        legend.position = "none") +
+  labs(x = "Self rated mental health income 50k - 75k",
+       title = "Bar Chart of Mental Health Income 50k - 75k")
+bar_mh5
+
+```
+
+```{r mhinc75100, fig.cap="Self Rated Mental Health of Respondents Income 75k - 100k", include = FALSE}
+#select the data
+data_mental6 = select(data1, 5, 4)
+data_mental6 <- data_mental6 %>% 
+  filter(Income_of_respondent == 4) %>%
+  select(2)
+
+#change the names
+data_mental6[data_mental6 == 1] <- "Excellent"
+data_mental6[data_mental6 == 2] <- "Very good"
+data_mental6[data_mental6 == 3] <- "Good"
+data_mental6[data_mental6 == 4] <- "Fair"
+data_mental6[data_mental6 == 5] <- "Poor"
+data_mental6[data_mental6 == 7] <- "Don't know"
+data_mental6[data_mental6 == 8] <- "Refusal"
+data_mental6[data_mental6 == 9] <- "Not stated"
+
+#draw the bar chart
+bar_mh6 <- data_mental6 %>%
+  ggplot(aes(x = Self_rated_mental_health, fill = Self_rated_mental_health)) +
+  geom_bar() + 
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust=1),
+        legend.position = "none") +
+  labs(x = "Self rated mental health income 75k - 100k",
+       title = "Bar Chart of Mental Health Income 75k - 100k")
+bar_mh6
+
+```
+
+```{r mhinc100125, fig.cap="Self Rated Mental Health of Respondents Income 100k - 125k", include = FALSE}
+#select the data
+data_mental7 = select(data1, 5, 4)
+data_mental7 <- data_mental7 %>% 
+  filter(Income_of_respondent == 5) %>%
+  select(2)
+
+#change the names
+data_mental7[data_mental7 == 1] <- "Excellent"
+data_mental7[data_mental7 == 2] <- "Very good"
+data_mental7[data_mental7 == 3] <- "Good"
+data_mental7[data_mental7 == 4] <- "Fair"
+data_mental7[data_mental7 == 5] <- "Poor"
+data_mental7[data_mental7 == 7] <- "Don't know"
+data_mental7[data_mental7 == 8] <- "Refusal"
+data_mental7[data_mental7 == 9] <- "Not stated"
+
+#draw the bar chart
+bar_mh7 <- data_mental7 %>%
+  ggplot(aes(x = Self_rated_mental_health, fill = Self_rated_mental_health)) +
+  geom_bar() + 
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust=1),
+        legend.position = "none") +
+  labs(x = "Self rated mental health income 100k - 125k",
+       title = "Bar Chart of Mental Health Income 100k - 125k")
+bar_mh7
+
+```
+
+```{r mhinc125, fig.cap="Self Rated Mental Health of Respondents Income 100k - 125k", include = FALSE}
+#select the data
+data_mental8 = select(data1, 5, 4)
+data_mental8 <- data_mental8 %>% 
+  filter(Income_of_respondent == 6) %>%
+  select(2)
+
+#change the names
+data_mental8[data_mental8 == 1] <- "Excellent"
+data_mental8[data_mental8 == 2] <- "Very good"
+data_mental8[data_mental8 == 3] <- "Good"
+data_mental8[data_mental8 == 4] <- "Fair"
+data_mental8[data_mental8 == 5] <- "Poor"
+data_mental8[data_mental8 == 7] <- "Don't know"
+data_mental8[data_mental8 == 8] <- "Refusal"
+data_mental8[data_mental8 == 9] <- "Not stated"
+
+#draw the bar chart
+bar_mh8 <- data_mental8 %>%
+  ggplot(aes(x = Self_rated_mental_health, fill = Self_rated_mental_health)) +
+  geom_bar() + 
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust=1),
+        legend.position = "none") +
+  labs(x = "Self rated mental health income above 125k",
+       title = "Bar Chart of Mental Health Income above 125k")
+bar_mh8
+
+```
+
+```{r mhage1524, fig.cap="Self Rated Mental Health of Respondents Age 15-24", include = FALSE}
+#select the data
+data_mentala = select(data1, 2, 4)
+data_mentala <- data_mentala %>% 
+  filter( Age_group == 1) %>%
+  select(2)
+
+#change the names
+data_mentala[data_mentala == 1] <- "Excellent"
+data_mentala[data_mentala == 2] <- "Very good"
+data_mentala[data_mentala == 3] <- "Good"
+data_mentala[data_mentala == 4] <- "Fair"
+data_mentala[data_mentala == 5] <- "Poor"
+data_mentala[data_mentala == 7] <- "Don't know"
+data_mentala[data_mentala == 8] <- "Refusal"
+data_mentala[data_mentala == 9] <- "Not stated"
+
+#draw the bar chart
+bar_mha <- data_mentala %>%
+  ggplot(aes(x = Self_rated_mental_health, fill = Self_rated_mental_health)) +
+  geom_bar() + 
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust=1),
+        legend.position = "none") +
+  labs(x = "Self rated mental health Age 15-24",
+       title = "Bar Chart of Mental Health Age 15-24")
+bar_mha
+
+```
+
+```{r mhage2534, fig.cap="Self Rated Mental Health of Respondents Age 25-34", include = FALSE}
+#select the data
+data_mentalb = select(data1, 2, 4)
+data_mentalb <- data_mentalb %>% 
+  filter( Age_group == 2) %>%
+  select(2)
+
+#change the names
+data_mentalb[data_mentalb == 1] <- "Excellent"
+data_mentalb[data_mentalb == 2] <- "Very good"
+data_mentalb[data_mentalb == 3] <- "Good"
+data_mentalb[data_mentalb == 4] <- "Fair"
+data_mentalb[data_mentalb == 5] <- "Poor"
+data_mentalb[data_mentalb == 7] <- "Don't know"
+data_mentalb[data_mentalb == 8] <- "Refusal"
+data_mentalb[data_mentalb == 9] <- "Not stated"
+
+#draw the bar chart
+bar_mhb <- data_mentalb %>%
+  ggplot(aes(x = Self_rated_mental_health, fill = Self_rated_mental_health)) +
+  geom_bar() + 
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust=1),
+        legend.position = "none") +
+  labs(x = "Self rated mental health Age 25-34",
+       title = "Bar Chart of Mental Health Age 25-34")
+bar_mhb
+
+```
+
+```{r mhage3544, fig.cap="Self Rated Mental Health of Respondents Age 35-44", include = FALSE}
+#select the data
+data_mentalc = select(data1, 2, 4)
+data_mentalc <- data_mentalc %>% 
+  filter( Age_group == 3) %>%
+  select(2)
+
+#change the names
+data_mentalc[data_mentalc == 1] <- "Excellent"
+data_mentalc[data_mentalc == 2] <- "Very good"
+data_mentalc[data_mentalc == 3] <- "Good"
+data_mentalc[data_mentalc == 4] <- "Fair"
+data_mentalc[data_mentalc == 5] <- "Poor"
+data_mentalc[data_mentalc == 7] <- "Don't know"
+data_mentalc[data_mentalc == 8] <- "Refusal"
+data_mentalc[data_mentalc == 9] <- "Not stated"
+
+#draw the bar chart
+bar_mhc <- data_mentalc %>%
+  ggplot(aes(x = Self_rated_mental_health, fill = Self_rated_mental_health)) +
+  geom_bar() + 
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust=1),
+        legend.position = "none") +
+  labs(x = "Self rated mental health Age 35-44",
+       title = "Bar Chart of Mental Health Age 35-44")
+bar_mhc
+
+```
+
+```{r mhage4554, fig.cap="Self Rated Mental Health of Respondents Age 45-54", include = FALSE}
+#select the data
+data_mentald = select(data1, 2, 4)
+data_mentald <- data_mentald %>% 
+  filter( Age_group == 4) %>%
+  select(2)
+
+#change the names
+data_mentald[data_mentald == 1] <- "Excellent"
+data_mentald[data_mentald == 2] <- "Very good"
+data_mentald[data_mentald == 3] <- "Good"
+data_mentald[data_mentald == 4] <- "Fair"
+data_mentald[data_mentald == 5] <- "Poor"
+data_mentald[data_mentald == 7] <- "Don't know"
+data_mentald[data_mentald == 8] <- "Refusal"
+data_mentald[data_mentald == 9] <- "Not stated"
+
+#draw the bar chart
+bar_mhd <- data_mentald %>%
+  ggplot(aes(x = Self_rated_mental_health, fill = Self_rated_mental_health)) +
+  geom_bar() + 
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust=1),
+        legend.position = "none") +
+  labs(x = "Self rated mental health Age 45-54",
+       title = "Bar Chart of Mental Health Age 45-54")
+bar_mhd
+
+```
+
+```{r mhage5564, fig.cap="Self Rated Mental Health of Respondents Age 55-64", include = FALSE}
+#select the data
+data_mentale = select(data1, 2, 4)
+data_mentale <- data_mentale %>% 
+  filter( Age_group == 5) %>%
+  select(2)
+
+#change the names
+data_mentale[data_mentale == 1] <- "Excellent"
+data_mentale[data_mentale == 2] <- "Very good"
+data_mentale[data_mentale == 3] <- "Good"
+data_mentale[data_mentale == 4] <- "Fair"
+data_mentale[data_mentale == 5] <- "Poor"
+data_mentale[data_mentale == 7] <- "Don't know"
+data_mentale[data_mentale == 8] <- "Refusal"
+data_mentale[data_mentale == 9] <- "Not stated"
+
+#draw the bar chart
+bar_mhe <- data_mentale %>%
+  ggplot(aes(x = Self_rated_mental_health, fill = Self_rated_mental_health)) +
+  geom_bar() + 
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust=1),
+        legend.position = "none") +
+  labs(x = "Self rated mental health Age 55-64",
+       title = "Bar Chart of Mental Health Age 55-64")
+bar_mhe
+
+```
+
+```{r mhage6574, fig.cap="Self Rated Mental Health of Respondents Age 65-74", include = FALSE}
+#select the data
+data_mentalf = select(data1, 2, 4)
+data_mentalf <- data_mentalf %>% 
+  filter( Age_group == 6) %>%
+  select(2)
+
+#change the names
+data_mentalf[data_mentalf == 1] <- "Excellent"
+data_mentalf[data_mentalf == 2] <- "Very good"
+data_mentalf[data_mentalf == 3] <- "Good"
+data_mentalf[data_mentalf == 4] <- "Fair"
+data_mentalf[data_mentalf == 5] <- "Poor"
+data_mentalf[data_mentalf == 7] <- "Don't know"
+data_mentalf[data_mentalf == 8] <- "Refusal"
+data_mentalf[data_mentalf == 9] <- "Not stated"
+
+#draw the bar chart
+bar_mhf <- data_mentalf %>%
+  ggplot(aes(x = Self_rated_mental_health, fill = Self_rated_mental_health)) +
+  geom_bar() + 
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust=1),
+        legend.position = "none") +
+  labs(x = "Self rated mental health Age 65-74",
+       title = "Bar Chart of Mental Health Age 65-74")
+bar_mhf
+
+```
+
+```{r mhage75, fig.cap="Self Rated Mental Health of Respondents Age above 75", include = FALSE}
+#select the data
+data_mentalg = select(data1, 2, 4)
+data_mentalg <- data_mentalg %>% 
+  filter( Age_group == 7) %>%
+  select(2)
+
+#change the names
+data_mentalg[data_mentalg == 1] <- "Excellent"
+data_mentalg[data_mentalg == 2] <- "Very good"
+data_mentalg[data_mentalg == 3] <- "Good"
+data_mentalg[data_mentalg == 4] <- "Fair"
+data_mentalg[data_mentalg == 5] <- "Poor"
+data_mentalg[data_mentalg == 7] <- "Don't know"
+data_mentalg[data_mentalg == 8] <- "Refusal"
+data_mentalg[data_mentalg == 9] <- "Not stated"
+
+#draw the bar chart
+bar_mhg <- data_mentalg %>%
+  ggplot(aes(x = Self_rated_mental_health, fill = Self_rated_mental_health)) +
+  geom_bar() + 
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust=1),
+        legend.position = "none") +
+  labs(x = "Self rated mental health Age above 75",
+       title = "Bar Chart of Mental Health Age above 75")
+bar_mhg
+
+```
+
+# Introduction
+
+Mental health is now becoming one of the most significant health problems, including but not limit to depression, anxiety disorders and eating disorders etc,. Why is mental health so important to our overall health? Mental health is the same crucial as physical health, because they may have cross impact with each other. For example, depression will increase the risk of various of physical health problems, such as suicide and long-lasting conditions like diabetes, heart attack and stroke. Similarly, physical health problems will also lead to severe mental health problems(@citeE).
+
+To study what are the factors that influence people's mental health, we extracted 4 of categorical variables from Canada 2017 General Social Survey (GSS): Families Cycle 31(@citeF) as predictors to fit logistic regression model to conduct a research of their impact on mental health. In this data set, there are 461 variables records all aspects of the respondents, including demographic and psychological factors. We picked out their self rated mental health, age, sex, average working time per week and their annual income range for further study and research.
+
+Through our research, computations and models indicate that income and age are the factors that have influence on one's mental health, which means that people under a certain age range may have the same struggle with their income and some other issue. In Section \@ref(discussion), we discussed the possible reasons behind these concerns and problems, and we tried to give potential solutions to the problems to relief the current situation. Our findings will be a guideline and a motivation for people who are struggling with their life and offer a proper direction to their future life. The lack of significance illustrates the flaws in survey design. In the end of the paper, limitations and weaknesses of the survey and analysis were discussed, and potential future work opportunities were addressed. A supplementary questionnaire was designed attached.  
+
+In the following data section, the source of data is introduced and important variables are focused. Logistic regression analysis is conducted with R (@citeR) and the logistic regression model is obtained. Multiple charts and tables are provided for visualizations of our results.
+
+# Data
+
+The report is analyzed using R language [@citeR] with tidyverse [@citetidyverse] and dplyr packages [@citedplyr]. The tables and figures are created using ggplot2 [@citeggplot2], and the pdf file of paper is knitted using knitr [@citeknitr]. 
+
+## Sourse of Data
+
+In this paper, we utilized the dataset about Canadian General social survey(GSS) on Family (cycle 31), 2017 from the University of Toronto Database CHASS website. CHASS is a computing facility which aims to promote computing in research. The micro data, user guide and code book can be found at: https://sda-artsci-utoronto-ca.myaccess.library.utoronto.ca/sdaweb/html/gss.htm (The link is library resource that can be accessed by faculty, students, and staff members at the University of Toronto only.) The data was cleaned and variable names were mutated to make it easier to understand and analyze after obtaining the data set from the CHASS website. 
+
+Established in 1985, GSS aims to gather data on social trends in order to compare changes in Canadians’ well-being. The 2017 GSS was conducted from the beginning of February 2 to the end of November, 2017. It is a sample survey using crosssectional design. The target population of the survey includes all non-institutionalized persons 15 years of age and older who live in the 10 provinces of Canada. The survey uses a new frame that was created in 2013, which combines telephone numbers of both landline and cellular with Statistics Canada’s Address Register, and collects data via telephone. The two methods of data collection for this survey are simple random sampling without replacement (SRSWOR) and stratified sampling. Data are subject to errors, including both sampling and non-sampling errors.
+
+## Pros and Cons of Data
+
+The survey collected a large amount of data for each selected interviewee as well as some information about the interviewee's family members. Some advantages of the data set are that it is the most recent general social survey and it is a large data set with 20,602 data points and numerous variables (81) that can be used for various areas of analyses. As the sample size is relatively large, the samples provide a relatively closed reflection of the true distribution of population. In order to improve the quality of survey, changes were made across GSS through years and making it difficult to compare among the surveys. In the 2017 survey, researchers no longer asked about personal income but collected from tax data instead.
+
+A significant drawback of the data set is that there are very few quantitative variables which can be directly used for creating linear regression models, which leads to heavy duty on data cleaning process. Another drawback is that non-probability sampling was used for survey data, which introduce some biases. The estimated value of the sampling survey would  inevitably be affected by sampling error, which may lead to some deviation in the final result. The frame applied to collect the data set may result in high inaccuracy of responses, and respondent filled this survey on their own and the responses are not connected with their personal information which increases the potential dishonesty of respondents. To minimize this error, sample data was used to estimate statistical measures of standard error and sampling error.
+
+## Data Overview and Cleaning 
+
+After retrieving the data set from the CHASS website，we did the data cleaning process, removing some of the missing values and changing the name of selected variables to make it easier for us to observe. We remove the cases related to 'valid skip', 'Don't know', 'Refusal' and 'Not stated' to ensure that these unclear answers will not affect our analysis of the overall situation. We have then changed some strings into numbers for variables to make it easier to proceed with the data analysis. Haven [@citehaven] was used in the data cleaning process. 
+
+Some of the variables are:
+
+- Age_group: The age group of the respondents.
+
+- Sex:  The sex of the respondents.
+
+- Self_rated_mental_health: The degree of wellness of mental health rated by respondents.
+
+- Income_of_respondent: The income level of the respondents.
+
+- Average_number_of_hours_worked_per_week: The average number of hours respondent worked per week.
+
+The first pie chart(Figure \@ref(fig:sex)) is related to the gender of respondents, we can view that the proportion of male and female respondents was nearly 1:1. Through the second pie chart(Figure \@ref(fig: age)), we find that the majority of respondents were in the age range of 25 to 64 years old, with the largest proportion of respondents between 35 and 44 years old. Only very few respondents were seventy five years old or older. According to the histogram of self rated mental health(Figure \@ref(fig:mh)), it can be observed that most of the respondents think they are in the good, very good or excellent mental health condition. The largest proportion has 'very good' self rated mental health and very few people believe that their mental health status is 'Poor'. We will continue observing whether we still keep the same pattern of distribution of Self_rated_mental_health after selecting the a certain variable in the data set.With the fourth histogram(Figure \@ref(fig:income)), we find that people's income is mainly concentrated between 0 and 100k. Respondents with high income(>100k) constitute a tiny minority.Respondents with income between 25k and 50k are the most numerous.The last histogram characterized the number of working hours of the respondents(Figure \@ref(fig:time)), and we observed that the number of respondents working 30-40 hours per week was the highest. There is also a significant number of people who work 0.1 to 29.9 hours or 40.1 to 50 hours per week. Only a very small number of respondents do not work.
+
+```{r sex, fig.cap="Sex of Respondents", echo = FALSE}
+#aggregate the data
+data_sex = select(data1, 1)
+data_sex = count(data_sex, 1)
+
+#change the row names
+data_sex[data_sex == 1] <- " Male"
+data_sex[data_sex == 2] <- " Female"
+
+#draw the pie chart
+bp1<- ggplot(data_sex, aes(x="", y=freq, fill=sex))+
+geom_bar(width = 1, stat = "identity")
+
+pie_sex <- bp1 + coord_polar("y", start=0) + theme_minimal() +
+  geom_text(aes(label = paste(round(freq / sum(freq) * 100, 1), "%")),
+            position = position_stack(vjust = 0.5)) +
+  theme(plot.title = element_text(hjust=0.5),
+        axis.line = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank()) +
+  labs(fill = "Sex",
+       x = NULL,
+       y = NULL,
+       title = "Pie Chart of Sex of Respondents")
+pie_sex
+```
+
+```{r age, fig.cap="age of Respondents", echo = FALSE}
+library(plyr)
+
+#aggregate the data
+data_age = select(data1, 2)
+data_age = count(data_age, 1)
+
+#change the row names
+data_age[data_age == 1] <- "15 to 24"
+data_age[data_age == 2] <- "25 to 34"
+data_age[data_age == 3] <- "35 to 44"
+data_age[data_age == 4] <- "45 to 54"
+data_age[data_age == 5] <- "55 to 64"
+data_age[data_age == 6] <- "65 to 74"
+data_age[data_age == 7] <- "75 and over"
+
+
+#draw the pie chart
+bp1<- ggplot(data_age, aes(x="", y=freq, fill = Age_group))+
+geom_bar(width = 1, stat = "identity")
+
+pie_age <- bp1 + 
+  coord_polar("y", start=0) + 
+  theme_minimal() +
+  geom_text(aes(label = paste(round(freq / sum(freq) * 100, 1), "%")),
+            position = position_stack(vjust = 0.5),size = 3) +
+  theme(plot.title = element_text(hjust=0.5),
+        axis.line = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank()) +
+  labs(fill = "Age_group",
+       x = NULL,
+       y = NULL,
+       title = "Pie Chart of Age Group of Respondents")
+pie_age
+```
+
+```{r mh, fig.cap="Self Rated Mental Health of Respondents", echo = FALSE}
+#select the data
+data_mental = select(data1, 4)
+
+#change the names
+data_mental[data_mental == 1] <- "Excellent"
+data_mental[data_mental == 2] <- "Very good"
+data_mental[data_mental == 3] <- "Good"
+data_mental[data_mental == 4] <- "Fair"
+data_mental[data_mental == 5] <- "Poor"
+data_mental[data_mental == 7] <- "Don't know"
+data_mental[data_mental == 8] <- "Refusal"
+data_mental[data_mental == 9] <- "Not stated"
+
+#draw the bar chart
+bar_mh <- data_mental %>%
+  ggplot(aes(x = Self_rated_mental_health, fill = Self_rated_mental_health)) +
+  geom_bar() + 
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust=1),
+        legend.position = "none") +
+  labs(x = "Self rated mental health",
+       title = "Bar Chart of Self Rated Mental Health")
+bar_mh
+
+```
+
+```{r income, fig.cap="Income of Respondents", echo = FALSE}
+library(plyr)
+
+#select the data
+data_income = select(data1, 5)
+
+#change the names
+data_income[data_income == 1] <- "Less than $25k"
+data_income[data_income == 2] <- "$25k to $50k"
+data_income[data_income == 3] <- "$50k to $75k"
+data_income[data_income == 4] <- "$75k to $100k"
+data_income[data_income == 5] <- "$100k to $ 125k"
+data_income[data_income == 6] <- "$125k and more"
+
+#draw the bar chart
+bar_income <- data_income %>%
+  ggplot(aes(x = Income_of_respondent, fill = Income_of_respondent)) +
+  geom_bar() + 
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust=1),
+        legend.position = "none") +
+  labs(x = "Income of respondent",
+       title = "Bar Chart of Income of respondent") 
+bar_income
+
+```
+
+```{r time, fig.cap="Average Number of Working Per Week of Respondents", echo = FALSE}
+library(plyr)
+
+#aggregate the data
+data_work_hour = select(data1, 6)
+
+#change the row names
+data_work_hour[data_work_hour == 1] <- "0 hour"
+data_work_hour[data_work_hour == 2] <- "0.1 to 29.9 hours"
+data_work_hour[data_work_hour == 3] <- "30.0 to 40.0 hours"
+data_work_hour[data_work_hour == 4] <- "40.1 to 50.0 hours"
+data_work_hour[data_work_hour == 5] <- "50.1 hours and more"
+data_work_hour[data_work_hour == 6] <- "Valid skip"
+data_work_hour[data_work_hour == 7] <- "Don't know"
+data_work_hour[data_work_hour == 8] <- "Refusal"
+data_work_hour[data_work_hour == 9] <- "Not stated"
+
+bar_work <- data_work_hour %>%
+  ggplot(aes(x = Average_number_of_hours_worked_per_week, fill = Average_number_of_hours_worked_per_week)) +
+  geom_bar() +
+  theme_minimal()+
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank()) +
+  labs(fill = "Time worked per week",
+       title = "Bar Chart of Time Worked Per Week")
+  
+bar_work
+
+```
+
+
+
+# Results
+
+## Self Rated Mental Health of People with Dfferent Income Comparison
+
+In the data section we have plotted the distribution for self rated mental health, since we aim to explore whether the mental health rates would be influenced by different income, here we fitted more histograms related to mental health rates by selecting each income interval. By comparing these histograms(Figure \@ref(fig:figincome)), we found that the distribution of self rated mental health for income interval between 0-125k remains almost the same as the income varies. However, it is also observed that most respondents with income above 125k rated their mental health as 'Excellent' which is quite different from the previous distribution. In the previous parts, 'Very good' is the most popular answer. Therefore, we can conclude that as income differs in a normal range(below 125k), the distribution of self rated mental health conditions is relatively stable. While as the income exceeds the level of 125k, people tends to be in greater emotional states.
+
+```{r figincome,echo=FALSE, warning=FALSE, fig.height = 12, fig.width = 12, fig.align = "center", fig.cap = "Self Rated Mental Health of People with different income",warning=FALSE}
+library(patchwork)
+(bar_mh3 | bar_mh4) /
+(bar_mh5 | bar_mh6) /
+(bar_mh7 | bar_mh8)
+```
+
+## Self Rated Mental Health of Male and Female Comaprison
+
+When we are comparing self rated mental health for all people and self rated mental health for different genders(Figure \@ref(fig:figsex)), we find that in general there are not that much differences in their distribution. However, according to the first pie chart, the ratio of male to female respondents was close to 1:1. Therefore if gender has no effect on the rating of mental health, we would expect to see exactly the same number of respondents for each rate of mental health across different genders in histograms. However, we found that male respondents seemed to prefer to assess their own mental health at the 'excellent' rate. We also noticed that more female participants chose the fair mental health level in comparison to male respondents. Thus, in general, the distribution of self rated mental health is not quite the same for respondents of different genders.
+
+```{r figsex,echo=FALSE, warning=FALSE, fig.height = 12, fig.width = 12, fig.align = "center", fig.cap = "Self Rated Mental Health of Male and Female Comaprison",warning=FALSE}
+library(patchwork)
+(bar_mh1 | bar_mh2) 
+```
+
+## Self Rated Mental Health of People with Dfferent Age Comparison
+
+Finally, we assess the performance of self-rated mental health across age groups(Figure \@ref(fig:figage)), and we find that people's evaluations of their own mental health varied considerably by age.We find that respondents aged 15 and younger were more likely to use 'poor' when describing their mental health status. As the age of the respondents increases, we see a steep decline in the proportion of self rated mental health among respondents who chose 'poor'. When we looked at the indicators of mental health for respondents over 75 years old, we found that none of them chose 'poor'. This suggests that people have different perception of their own mental health as the age group differs.Similarly, we observed that the proportion of respondents who identified themselves as 'fair' mental health declined with the increasing of age. Older people tend to choose better levels of mental health rate when they are being assessed.
+
+```{r figage,echo=FALSE, warning=FALSE, fig.height = 12, fig.width = 12, fig.align = "center", fig.cap = "Self Rated Mental Health of People with different Age",warning=FALSE}
+library(patchwork)
+(bar_mha | bar_mhb) /
+(bar_mhc | bar_mhd) /
+(bar_mhe | bar_mhf) /
+(bar_mhg)
+```
+
+
+## Logistic regression model
+
+The model being used to analyze the data is a logistic regression model. Logistic regression is a type of statistical model that uses a logistic function to model a binary response variable. The model being constructed will use the glm() function in R.
+
+A key assumption that is made when constructing a logistic regression model is that we have a binary response variable. The response variable in our model is mental health. Since within our data set, self-rated mental health is not binary, we created a new variable. The new variable, groups individuals with poor and fair mental health into having an overall lower mental health. Individuals with good, very good and excellent mental health are grouped into not having lower mental health. This new variable now allows us to construct a logistic regression model. 
+
+\newpage
+
+The equation of our logistic regression model is:
+
+\begin{equation}
+  \begin{split}
+log(\frac{\hat{p}}{1-\hat{p}}) =  \beta_0 + \beta_1 X_{sex_-m} + \beta_2 X_{sex_-f} + \beta_3 X_{age\_15-24} + \beta_4 X_{age_\_25-34} + \beta_5 X_{age_\_35-44} \\+ \beta_6 X_{age_\_45-54} + \beta_7 X_{age_\_55-64} + \beta_8 X_{age_\_65-74} + \beta_9 X_{age_>75} + \beta_{10} X_{inc<25} \\+ \beta_{11} X_{inc\_25-50} + \beta_{12} X_{inc\_50-75} + \beta_{13} X_{inc\_75-100} +  \beta_{14} X_{inc\_100-125} + \beta_{15} X_{inc>125} \\+ \beta_{16} X_{work_-0h} + \beta_{17} X_{work\_0.1-29.9h} + \beta_{18} X_{work\_30-40h} + \beta_{19} X_{work\_40.1-50h} + \beta_{20} X_{work>50h}  (\#eq:logistic)
+  \end{split}
+\end{equation}
+
+where:
+
+* sex_m = Sex of respondent is male
+* sex_f = Sex of respondent is female
+* age_15-24 = Age group of respondent (groups of 10) is between 15 to 24 years
+* age_25-34 = Age group of respondent (groups of 10) is between 25 to 34 years
+* age_35-44 = Age group of respondent (groups of 10) is between 35 to 44 years
+* age_45-54 = Age group of respondent (groups of 10) is between 45 to 54 years
+* age_55-64 = Age group of respondent (groups of 10) is between 55 to 64 years
+* age_65-74 = Age group of respondent (groups of 10) is between 65 to 74 years
+* age_>75 = Age group of respondent (groups of 10) is between 75 years and over
+* inc<25 = Income of respondent - Total (before tax) is less than $25,000
+* inc_25-50 = Income of respondent - Total (before tax) is between \$25,000 to \$49,999
+* inc_50-75 = Income of respondent - Total (before tax) is between \$50,000 to \$74,999
+* inc_75-100 = Income of respondent - Total (before tax) is between \$75,000 to \$99,999
+* inc_100-125 = Income of respondent - Total (before tax) is between \$10,0000 to \$124,999
+* inc>125 = Income of respondent - Total (before tax) is greater than \$125,000
+* work_0h = Average number of hours worked per week is 0 hour
+* work_0.1-29.9h = Average number of hours worked per week is 0.1 to 29.9 hours
+* work_30-40h = Average number of hours worked per week is between 30 to 40 hours 
+* work_40.1-50h = Average number of hours worked per week is between 40.1 to 50 hours 
+* work>50.1 = Average number of hours worked per week is greater than 50 hours
+
+and $$\hat{p}$$ is the probability of having lower mental health.
+
+```{r, include=FALSE}
+#Using a simple logistic regression model
+data1_new <- data1 %>%
+  filter(Average_number_of_hours_worked_per_week != "Don't know") %>%
+  filter(Average_number_of_hours_worked_per_week != "0 hour") %>%
+  filter(Self_rated_mental_health != "Don't know") %>%
+  mutate(lower_mental_health = case_when(Self_rated_mental_health == 5 ~ 1, Self_rated_mental_health == 4 ~ 1, Self_rated_mental_health == 3 ~ 0, Self_rated_mental_health == 2 ~ 0, Self_rated_mental_health == 1 ~ 0)) 
+
+
+logisticmodel <- glm(lower_mental_health ~ as.factor(Income_of_respondent) + as.factor(Average_number_of_hours_worked_per_week) + as.factor(sex) + as.factor(Age_group), data = data1_new, family = "binomial")
+summary(logisticmodel)
+```
+
+The coefficients of the predictors and the p-values are shown below, we can tell from the table 1 that income, sex and age are related to one's mental health.
+
+### Table 1: Coefficients from the logistic regression model
+
+Variable names                        | Estimate    | Std. Error.   | z value      | Pr>\|z\|
+------------------------------------- |------------ |-------------- |------------- |-------------
+(Intercept)                           |-1.25710     |0.63490        |-1.980        |0.047704 *  
+\$25,000 to $49,999                   |-0.26394     |0.09933        |-2.657        |0.007876 ** 
+\$50,000 to $74,999                   |-0.50079     |0.11635        |-4.304        |1.68e-05 ***
+\$75,000 to $99,999                   |-0.55508     |0.13952        |-3.979        |6.93e-05 ***
+\$100,000 to $124,999                 |-0.63903     |0.20041        |-3.189        |0.001429 ** 
+\$125,000 and more                    |-1.10792     |0.24367        |-4.547        |5.45e-06 ***
+0.1 to 29.9 hours                     |-0.70395     |0.63198        |-1.114        |0.265329    
+30.0 to 40.0 hours                    |-0.70249     |0.62912        |-1.117        |0.264154    
+40.1 to 50.0 hours                    |-0.84519     |0.63850        |-1.324        |0.185597    
+50.1 hours and more                   |-0.51448     |0.64107        |-0.803        |0.422246    
+female                                |-0.18762     |0.07523        | 2.494        |0.012636 *  
+age 25-34                             |-0.31668     |0.12711        |-2.491        |0.012726 *  
+age 35-44                             |-0.48165     |0.13167        |-3.658        |0.000254 ***
+age 45-54                             |-0.47638     |0.13393        |-3.557        |0.000375 ***
+age 55-64                             |-0.68767     |0.13452        |-5.112        |3.19e-07 ***
+age 65-74                             |-1.29479     |0.22108        |-5.857        |4.72e-09 ***
+age 75 and over                       |-0.59171     |0.40356        |-1.466        |0.142587    
+
+
+# Discussion
+
+## Income and mental health
+As we can see in the result of the model, all the levels of income range have an impact on the mental health, from which we can infer that income may have association with people's mental health: higher income, better mental health. According to the paper published on JAMA Network in 2011, result shows that "lower levels of household income are associated with several lifetime mental disorders and suicide attempts"(@citeG), even though it is not a causation relationship, but we should attach great attention to this issue. It is for the reason that people with lower income are lack of capital for better physical and mental treatment, some will not even try to search for treatment, because they think it is a waste of time and money, which makes the case even worse. An increasing of this kind of people may lead to social instability. Also, according to the paper publish on NCBI, "increases in Social Security income significantly improve mental health status and the likelihood of a psychiatric diagnosis for women, but not for men"(@citeH), leads to the next topic that discusses the relationship between sex and mental health. Just as described, higher income improves mental health status, since people with higher income tend to have better resources, and thus levels up their living standard, they have more freedom and time to enjoy their life.
+
+
+## Age and Mental health
+Aging and mental health is always a problem when it comes to the senior. According to CDC, "it is estimated that 20% of people age 55 years or older experience some type of mental health concern", and the common conditions include anxiety, severe cognitive impairment, and mood disorders"(@citeI).
+
+In our case, as the figure \@ref(fig:figall) shown, the age between 35 and 75 tends to have association with mental health and this relationship just disappeared after the age of 75. We can infer that the association may due to the pressure coming from work, life and family. According to the paper named "Mental well-being at the workplace" published on NCBI, "poor mental health and stress at the workplace can be a contributory factor to a range of physical illnesses like hypertension, diabetes and cardiovascular conditions, among others"(@citeJ). With that being said, employers should provide a more flexible working time and schedule for employees to relief the pressure comes with commuting. Employers should also have a better incentive system for employees to incentive those have outstanding performance.
+
+## Interaction Effects of Age and Income
+
+Interaction occurs when the effect of one variable depends on the value of another. Interaction effects are common in regression analysis, ANOVA and design experiments. In more complex study areas, the independent variables might interact with each other, making it critical to incorporate interaction term in the model.
+
+Logistic regression predict the dependent variable using independent variables, which makes it necessary to take in to account the relationship between age groups and income levels. Correlation can be used to quantify the linear dependency of two variables. Here, we use a R package corrplot(@citeCor) which provides a visual exploratory on correlation matrix that help detect hidden patterns among the variables. The magnitude of the correlation coefficient indicates the strength of the association. For example, a strong correlation of r = 0.9 suggests a significant positive association between two variables, whereas a correlation of r = -0.1 suggest a weak, negative association. From the correlation plot, we can observe that the association between age group and income is relatively higher than with the other factors. Although the correlation of r = 0.22 does not imply a strong correlation that make us consider them as dependent on each other, we should consider the hidden relationship between age and income.
+
+```{r, echo=FALSE}
+library(corrplot)
+M = cor(data1)
+corrplot(M, method = 'number', tl.cex=0.5)
+```
+
+Previous studies on income have been conducted, focusing on investigating and interpreting wage dynamics. As people get older and gain work experience, their incomes are likely to continue to grow, or at least hold steady until retirement. However, this does not seem to be the case with the traditional age-income profile. According to Survey of Labour and Income Dynamics by Statistics Canada, annual earnings of people increase in the early years and reaches a peak around middle age, but decline after age 50.
+
+Social safety nets, basic pension income and defined benefit pension schemes are funded by the working population; The growing imbalance of ageing populations requires careful prediction and planning. The demographic shift will affect the functioning of the entire economy, place a heavy burden on the welfare state that funds the health and pensions of the retired population, reflect cuts in social taxes and benefits, and have a further non-negligible impact on mental health. In the future studies, models can be improved by adding interaction terms and interpret them in statistical designs.
+
+
+## Weaknesses 
+
+The primary weakness of our analysis is that our data set was obtained using non-probability sampling, which could lead to some bias or give us an unrepresentative sample. General Social Survey data were collected through self-completed online questionnaires and telephone interviews since 2013 (Government of Canada, Statistics Canada). Along with the use of an RDD frame, the collection of GSS data was carried out via Computer Assisted Telephone Interviewing (CATI). The method aims to lower collection costs than in-person interviews and increase the flexibility with respect to sample design. However, significant drawbacks are resulted from this collection process. This can lead to inaccurate data collection because people fill these out themselves and they may not be completely honest. Moreover, the response rates tend to be much lower compared with face-to face interviews, and the non-coverage of households is concentrated in certain population groups who own cell phones, especially young and urban Canadians, while those people who are excluded from RDD samples are those without telephone that tend to have lower income and education levels. Samples in the target population (all Canadians aged 15 or older) is not equally likely to be selected. This could result in some people being underrepresented or not being represented at all. However, Statistics Canada is beginning to ask respondents for permission to link their survey information to other data sources, such as personal tax records (@citeA), which can increase data accuracy, especially for income.
+
+Another weekness is that we chose young people aged 15-44 for our analysis, but the main sources of stress can vary by age. Studies of age differences in emotional responses to daily stress have yielded inconsistent results (@citeB). For example, studying is more stressful for teenagers in their 20s. For those in their 30s, the main source of stress may be work or family relationships. As a result, our choice of 15-44 year olds is not precise enough. In future studies, we can subdivide the ages into ten-year-old groups and analyze them individually. For example, in order to improve the accuracy of prediction, three age groups, 15-24, 25-34 and 35-44, can be modeled separately.
+
+
+## Next Steps
+
+Some helpful next steps would be to get numerical data on everyone's income in the data collection, rather than simply record the broad income ranges. Numerical data is compatible with most statistical analysis methods and thus makes it the most efficient among researchers (@citeC). Particularly, it allows for more quantitative analysis, such as building linear regression models. To investigate whether our data are biased, we should also perform similar analyses with other representative data sets. This will help us confirm accuracy of our findings and whether the data we use is biased. Another useful next step might be to perform a similar analysis using GSS data sets from different years and compare the results to see if they are biased or similar to what we found in the 2017 data sets. This will further deepen our understanding of the relationship between income and hours worked per week and self-rated mental health.
+
+For future study, an interesting path would be to compare these mental health data with the most recent data from 2020. Results from the COVID-19 and Mental Health Survey (SCMH) released last year showed that one in four Canadians aged 18 and older screened positive for symptoms of depression, anxiety or post-traumatic stress disorder (PTSD) in spring 2021, up from one in five in fall 2020 (@citeD). Given the two years of the COVID-19 pandemic, it is interesting to see if mental health declines overall in this context.
+
+\newpage
+
+\appendix
+
+# Appendix {-}
+
+
+# Supplementary Survey
+
+Our supplementary survey is here: https://docs.google.com/forms/d/1rlN6ozh_mWRP5RzmTckl5rIQA6etI_wwW4KaZNJ3RX8/edit
+
+## Preamble
+
+The purpose of this survey is to further investigate factors that influence people's mental health. We are interested in more detailed data than that is provided in Canada GSS 2017 and will use this to guide the development of submissions to change future iteration of the GSS. 
+
+By proceeding with this survey you understand that Zhiyue Yu will be using your responses to better understand the factors that impact people's mental health. Overall results of this survey will be used in study and research only. Your responses will not be misused and will remain private. This survey is voluntary and if you decide to participate, you may skip any question(s) and withdraw at anytime free of penalty. 
+
+## Questions
+
+1. What is your age?
+   - 15-24
+   - 25-34
+   - 35-44
+   - 45-54
+   - 55-64
+   - 65-74
+   - 75+
+   - other
+
+2. What is your gender?
+   - Male
+   - Female
+   - Transgender
+   - Gender neutral
+   - Non-binary
+   - Agender
+   - Pangender
+   - Genderqueer
+   - Two-spirit
+   - Other
+   
+3. How do you rate your mental health?
+   - 1(Very poor)
+   - 2
+   - 3
+   - 4
+   - 5
+   - 6
+   - 7
+   - 8
+   - 9
+   - 10(Very well)
+   
+4. What is your occupation?
+   - Management
+   - Business, finance, and administration
+   - Natural and applied sciences and related occupations
+   - Health occupations
+   - Occupations in education, law and social community
+   - Occupations in art, culture, recreation and sports
+   - Sales and service
+   - Trades, transport and equipment operators
+   - Natural resources, agriculture and related production occupations
+   - Occupations in manufacturing and utilities
+   - Other
+   
+5. How do you rate your current financial situation?
+   - 1(Very poor)
+   - 2
+   - 3
+   - 4
+   - 5
+   - 6
+   - 7
+   - 8
+   - 9
+   - 10(Very well)
+   
+6. How do you rate the happiness of your family?
+   - 1(Very poor)
+   - 2
+   - 3
+   - 4
+   - 5
+   - 6
+   - 7
+   - 8
+   - 9
+   - 10(Very well)
+   
+7. How do you rate the happiness of your childhood?
+   - 1(Very poor)
+   - 2
+   - 3
+   - 4
+   - 5
+   - 6
+   - 7
+   - 8
+   - 9
+   - 10(Very well)
+   
+8. How often do you experience discrimination and stigma, including racism?
+   - 1(Very poor)
+   - 2
+   - 3
+   - 4
+   - 5
+   - 6
+   - 7
+   - 8
+   - 9
+   - 10(Very well)
+   
+9. How do you rate your work-life balance?
+   - 1(Very poor)
+   - 2
+   - 3
+   - 4
+   - 5
+   - 6
+   - 7
+   - 8
+   - 9
+   - 10(Very well)
+   
+10. Do you have a long-term goal or purpose of your life?
+   - Yes
+   - No
+   - Maybe
+   - Other
+
+## End page
+Thank you very much for participating in our survey, if you have any questions, please email at gggeorgeee.yu@mail.utoronto.ca.
+
+\newpage
+
+
+# References
+
